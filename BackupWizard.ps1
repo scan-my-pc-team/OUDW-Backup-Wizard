@@ -254,9 +254,18 @@ function Main {
 
     # Function to prompt user for export choice
     function Prompt-UserExportChoice {
+    do {
         Write-Host "`nDo you want to export your browser profiles?"
-        return Read-Host "Press 1 to export profiles or 0 to close"
-    }
+        $userChoice = Read-Host "Press 1 to export profiles or 0 to close"
+
+        if ($userChoice -eq "1" -or $userChoice -eq "0") {
+            return $userChoice
+        }
+        else {
+            Write-Host "B R U H!!! Invalid input. Please try again." -ForegroundColor $ErrorColour
+        }
+    } while ($true)
+}
 
     Write-Host "Prompt-UserExportChoice function defined."
 

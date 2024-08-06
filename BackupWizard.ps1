@@ -23,6 +23,7 @@ $githubText = @"
 # Define the global variable for error message color
 $ErrorColour = "Red"
 $PassColour = "Green"
+$ExitMessage = "Press Enter to exit"
 
 # Display ASCII art and GitHub information
 Write-Host $asciiArt -ForegroundColor Blue
@@ -111,14 +112,14 @@ function Main {
             }
             catch {
                 Write-Host "Failed to start OneDrive: $_" -ForegroundColor $ErrorColour
-                Read-Host -Prompt "Press Enter to exit"
+                Read-Host -Prompt $ExitMessage 
                 Exit 1
             }
 
             $OneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
             if (-Not $OneDriveProcess) {
                 Write-Host "Failed to start OneDrive." -ForegroundColor $ErrorColour
-                Read-Host -Prompt "Press Enter to exit"
+                Read-Host -Prompt $ExitMessage 
                 Exit 1
             }
         }
@@ -130,7 +131,7 @@ function Main {
         $OneDriveUserFolder = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
         if (-Not (Test-Path $OneDriveUserFolder)) {
             Write-Host "User is not logged into OneDrive. Please log in." -ForegroundColor $ErrorColour
-            Read-Host -Prompt "Press Enter to exit"
+            Read-Host -Prompt $ExitMessage 
             Exit 1
         }
         Write-Host "User is logged into OneDrive." -ForegroundColor $PassColour
@@ -154,7 +155,7 @@ function Main {
     $OneDrivePath = Get-OneDrivePath
     if (-Not $OneDrivePath) {
         Write-Host "OneDrive is not installed on this system." -ForegroundColor $ErrorColour
-        Read-Host -Prompt "Press Enter to exit"
+        Read-Host -Prompt $ExitMessage 
         Exit 1
     }
     Write-Host "OneDrive is installed at $OneDrivePath." -ForegroundColor $PassColour
@@ -169,5 +170,5 @@ function Main {
     }
 
     # Wait for user to press Enter before closing the terminal
-    Read-Host -Prompt "Press Enter to exit"
+    Read-Host -Prompt $ExitMessage 
 }

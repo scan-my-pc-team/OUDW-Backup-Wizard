@@ -60,16 +60,24 @@ do {
 
 # Define the Main function
 function Main {
+    Write-Host "Starting Main function..."
+
     # Define the special folder names
     $folderNames = @("Desktop", "MyDocuments", "MyPictures", "MyMusic", "MyVideos")
 
+    Write-Host "Folder names defined."
+
     # Create an empty hashtable to store the folder paths
     $specialFolders = @{}
+
+    Write-Host "Hashtable initialized."
 
     # Populate the hashtable using a loop
     foreach ($folderName in $folderNames) {
         $specialFolders[$folderName] = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::$folderName)
     }
+
+    Write-Host "Hashtable populated."
 
     # Map friendly names to the folder keys
     $folderFriendlyNames = @{
@@ -80,6 +88,8 @@ function Main {
         "MyVideos"    = "Videos"
     }
 
+    Write-Host "Friendly names mapped."
+
     # Function to check if a file exists and return its path
     function Test-OneDrivePath {
         param (
@@ -87,6 +97,8 @@ function Main {
         )
         return (Test-Path $Path)
     }
+
+    Write-Host "Test-OneDrivePath function defined."
 
     # Function to check if OneDrive is installed and return its path
     function Get-OneDrivePath {
@@ -97,6 +109,8 @@ function Main {
         )
         return $OneDrivePaths | Where-Object { Test-OneDrivePath $_ }
     }
+
+    Write-Host "Get-OneDrivePath function defined."
 
     # Function to ensure OneDrive is running
     function Ensure-OneDriveRunning {
@@ -112,30 +126,34 @@ function Main {
             }
             catch {
                 Write-Host "Failed to start OneDrive: $_" -ForegroundColor $ErrorColour
-                Read-Host -Prompt $ExitMessage 
+                Read-Host -Prompt $ExitMessage
                 Exit 1
             }
 
             $OneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
             if (-Not $OneDriveProcess) {
                 Write-Host "Failed to start OneDrive." -ForegroundColor $ErrorColour
-                Read-Host -Prompt $ExitMessage 
+                Read-Host -Prompt $ExitMessage
                 Exit 1
             }
         }
         Write-Host "OneDrive is running." -ForegroundColor $PassColour
     }
 
+    Write-Host "Ensure-OneDriveRunning function defined."
+
     # Function to check if the user is logged into OneDrive
     function Check-OneDriveUserLogin {
         $OneDriveUserFolder = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
         if (-Not (Test-Path $OneDriveUserFolder)) {
             Write-Host "User is not logged into OneDrive. Please log in." -ForegroundColor $ErrorColour
-            Read-Host -Prompt $ExitMessage 
+            Read-Host -Prompt $ExitMessage
             Exit 1
         }
         Write-Host "User is logged into OneDrive." -ForegroundColor $PassColour
     }
+
+    Write-Host "Check-OneDriveUserLogin function defined."
 
     # Function to check and print the status of a folder path
     function Check-FolderPath {
@@ -151,11 +169,13 @@ function Main {
         }
     }
 
+    Write-Host "Check-FolderPath function defined."
+
     # Check OneDrive installation, running status, and user login
     $OneDrivePath = Get-OneDrivePath
     if (-Not $OneDrivePath) {
         Write-Host "OneDrive is not installed on this system." -ForegroundColor $ErrorColour
-        Read-Host -Prompt $ExitMessage 
+        Read-Host -Prompt $ExitMessage
         Exit 1
     }
     Write-Host "OneDrive is installed at $OneDrivePath." -ForegroundColor $PassColour
@@ -170,5 +190,5 @@ function Main {
     }
 
     # Wait for user to press Enter before closing the terminal
-    Read-Host -Prompt $ExitMessage 
+    Read-Host -Prompt $ExitMessage
 }

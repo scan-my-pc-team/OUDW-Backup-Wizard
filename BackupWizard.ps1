@@ -1,9 +1,22 @@
-# Define paths to main "special" user folders
-$desktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
-$documentsPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::MyDocuments)
-$picturesPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::MyPictures)
-$musicPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::MyMusic)
-$videosPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::MyVideos)
+# Define the special folder names
+$folderNames = @("Desktop", "MyDocuments", "MyPictures", "MyMusic", "MyVideos")
+
+# Create an empty hashtable to store the folder paths
+$specialFolders = @{}
+
+# Populate the hashtable using a loop
+foreach ($folderName in $folderNames) {
+    $specialFolders[$folderName] = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::$folderName)
+}
+
+# Map friendly names to the folder keys
+$folderFriendlyNames = @{
+    "Desktop"   = "Desktop"
+    "MyDocuments" = "Documents"
+    "MyPictures"  = "Pictures"
+    "MyMusic"     = "Music"
+    "MyVideos"    = "Videos"
+}
 
 # Define the global variable for error message color
 $ErrorColour = "Red"
@@ -17,63 +30,54 @@ function Test-OneDrivePath {
     return (Test-Path $Path)
 }
 
-# Common OneDrive installation paths
-$OneDrivePaths = @(
-    "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe",
-    "$env:PROGRAMFILES\Microsoft OneDrive\OneDrive.exe",
-    "$env:PROGRAMFILES(X86)\Microsoft OneDrive\OneDrive.exe"
-)
-
-# Check if OneDrive is installed
-$OneDrivePath = $null
-foreach ($path in $OneDrivePaths) {
-    if (Test-OneDrivePath $path) {
-        $OneDrivePath = $path
-        break
-    }
+# Function to check if OneDrive is installed and return its path
+function Get-OneDrivePath {
+    $OneDrivePaths = @(
+        "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe",
+        "$env:PROGRAMFILES\Microsoft OneDrive\OneDrive.exe",
+        "$env:PROGRAMFILES(X86)\Microsoft OneDrive\OneDrive.exe"
+    )
+    return $OneDrivePaths | Where-Object { Test-OneDrivePath $_ }
 }
 
-if (-Not $OneDrivePath) {
-    Write-Host "OneDrive is not installed on this system." -ForegroundColor $ErrorColour
-    Read-Host -Prompt "Press Enter to exit"
-    Exit 1
-}
-
-Write-Host "OneDrive is installed at $OneDrivePath." -ForegroundColor $PassColour
-
-# Ensure OneDrive is running
-$OneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
-if (-Not $OneDriveProcess) {
-    Write-Host "OneDrive is not running. Starting OneDrive..." -ForegroundColor $ErrorColour
-    try {
-        Start-Process $OneDrivePath
-        Start-Sleep -Seconds 10
-    }
-    catch {
-        Write-Host "Failed to start OneDrive: $_" -ForegroundColor $ErrorColour
-        Read-Host -Prompt "Press Enter to exit"
-        Exit 1
-    }
-
+# Function to ensure OneDrive is running
+function Ensure-OneDriveRunning {
+    param (
+        [string]$OneDrivePath
+    )
     $OneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
     if (-Not $OneDriveProcess) {
-        Write-Host "Failed to start OneDrive." -ForegroundColor $ErrorColour
+        Write-Host "OneDrive is not running. Starting OneDrive..." -ForegroundColor $ErrorColour
+        try {
+            Start-Process $OneDrivePath
+            Start-Sleep -Seconds 10
+        }
+        catch {
+            Write-Host "Failed to start OneDrive: $_" -ForegroundColor $ErrorColour
+            Read-Host -Prompt "Press Enter to exit"
+            Exit 1
+        }
+
+        $OneDriveProcess = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
+        if (-Not $OneDriveProcess) {
+            Write-Host "Failed to start OneDrive." -ForegroundColor $ErrorColour
+            Read-Host -Prompt "Press Enter to exit"
+            Exit 1
+        }
+    }
+    Write-Host "OneDrive is running." -ForegroundColor $PassColour
+}
+
+# Function to check if the user is logged into OneDrive
+function Check-OneDriveUserLogin {
+    $OneDriveUserFolder = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
+    if (-Not (Test-Path $OneDriveUserFolder)) {
+        Write-Host "User is not logged into OneDrive. Please log in." -ForegroundColor $ErrorColour
         Read-Host -Prompt "Press Enter to exit"
         Exit 1
     }
+    Write-Host "User is logged into OneDrive." -ForegroundColor $PassColour
 }
-
-Write-Host "OneDrive is running." -ForegroundColor $PassColour
-
-# Check if user is logged into OneDrive
-$OneDriveUserFolder = [System.IO.Path]::Combine($env:USERPROFILE, "OneDrive")
-if (-Not (Test-Path $OneDriveUserFolder)) {
-    Write-Host "User is not logged into OneDrive. Please log in." -ForegroundColor $ErrorColour
-    Read-Host -Prompt "Press Enter to exit"
-    Exit 1
-}
-
-Write-Host "User is logged into OneDrive." -ForegroundColor $PassColour
 
 # Function to check and print the status of a folder path
 function Check-FolderPath {
@@ -89,12 +93,23 @@ function Check-FolderPath {
     }
 }
 
+# Check OneDrive installation, running status, and user login
+$OneDrivePath = Get-OneDrivePath
+if (-Not $OneDrivePath) {
+    Write-Host "OneDrive is not installed on this system." -ForegroundColor $ErrorColour
+    Read-Host -Prompt "Press Enter to exit"
+    Exit 1
+}
+Write-Host "OneDrive is installed at $OneDrivePath." -ForegroundColor $PassColour
+
+Ensure-OneDriveRunning -OneDrivePath $OneDrivePath
+Check-OneDriveUserLogin
+
 # Output the paths with success or error messages
-Check-FolderPath -Path $desktopPath -FolderName "Desktop"
-Check-FolderPath -Path $documentsPath -FolderName "Documents"
-Check-FolderPath -Path $picturesPath -FolderName "Pictures"
-Check-FolderPath -Path $musicPath -FolderName "Music"
-Check-FolderPath -Path $videosPath -FolderName "Videos"
+foreach ($folder in $specialFolders.GetEnumerator()) {
+    $friendlyName = $folderFriendlyNames[$folder.Key]
+    Check-FolderPath -Path $folder.Value -FolderName $friendlyName
+}
 
 # Wait for user to press Enter before closing the terminal
 Read-Host -Prompt "Press Enter to exit"

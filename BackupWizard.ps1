@@ -16,8 +16,8 @@ $asciiArt = @"
 
 $githubText = @"
 
-    GitHub: ArtemKech
     GitHub: DeadDove13
+    GitHub: ArtemKech
 "@
 
 # Define the global variable for error message color
@@ -180,6 +180,7 @@ function Main {
 }
 
 # Prompt the user to press 1 to run the script or 0 to close
+
 do {
     $choice = Read-Host "Press 1 to run the script or 0 to close"
 
